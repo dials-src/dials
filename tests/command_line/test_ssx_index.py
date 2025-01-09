@@ -52,14 +52,17 @@ def test_ssx_index_no_reference_geometry(dials_data, tmp_path, indexer):
     expts = ssx / "imported_no_ref_5.expt"
     refls = ssx / "strong_5.refl"
 
+    args = [
+        shutil.which("dials.ssx_index"),
+        expts,
+        refls,
+        f"stills.indexer={indexer}",
+        "-vv",
+    ]
+    if indexer == "sequences":
+        args.append("refinement.reflections.outlier.algorithm=null")
     result = subprocess.run(
-        [
-            shutil.which("dials.ssx_index"),
-            expts,
-            refls,
-            f"stills.indexer={indexer}",
-            "-vv",
-        ],
+        args,
         cwd=tmp_path,
         capture_output=True,
     )

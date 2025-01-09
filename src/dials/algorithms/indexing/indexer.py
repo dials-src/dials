@@ -330,7 +330,11 @@ class Indexer:
             "auto",
             libtbx.Auto,
         ):
-            if self.experiments[0].goniometer is None:
+            if (
+                self.experiments[0].goniometer is None
+                or self.experiments[0].scan is None
+                or self.experiments[0].scan.is_still()
+            ):
                 self.all_params.refinement.reflections.outlier.algorithm = "sauter_poon"
             else:
                 # different default to dials.refine

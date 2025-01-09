@@ -27,6 +27,8 @@ class MCD(CentroidOutlier):
         k2=2,
         k3=100,
         threshold_probability=0.975,
+        positional_coordinates="xy",
+        rotational_coordinates=None,
     ):
         if cols is None:
             cols = ["x_resid", "y_resid", "phi_resid"]

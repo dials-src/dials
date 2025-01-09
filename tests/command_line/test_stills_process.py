@@ -170,6 +170,7 @@ def test_sacla_h5(dials_data, tmp_path, control_flags, in_memory=False):
             assert os.path.isfile(known_orientations_path)
             f.write("indexing.stills.known_orientations=%s\n" % known_orientations_path)
             f.write("indexing.stills.require_known_orientation=True\n")
+            f.write("refinement.reflections.outlier.algorithm=null\n")
 
     # Call dials.stills_process
     if use_mpi:

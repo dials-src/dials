@@ -659,6 +659,8 @@ def test_indexers_dont_lose_reflections(
     params.indexing.multiple_lattice_search.max_lattices = 5
     params.indexing.method = "real_space_grid_search"
     params.indexing.stills.indexer = indexer_type
+    if indexer_type == "sequences":
+        params.refinement.reflections.outlier.algorithm = "null"
     idxr = Indexer.from_parameters(refl, expts, params=params)
     idxr.index()
     assert len(idxr.refined_experiments) == expected_n_lattices

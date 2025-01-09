@@ -28,7 +28,11 @@ from dials.algorithms.refinement.parameterisation.parameter_report import (
 from dials.algorithms.refinement.prediction.managed_predictors import (
     ExperimentsPredictorFactory,
 )
-from dials.algorithms.refinement.refinement_helpers import ordinal_number, string_sel
+from dials.algorithms.refinement.refinement_helpers import (
+    compute_radial_and_transverse_residuals,
+    ordinal_number,
+    string_sel,
+)
 from dials.algorithms.refinement.reflection_manager import ReflectionManagerFactory
 from dials.algorithms.refinement.reflection_manager import (
     phil_str as reflections_phil_str,
@@ -379,6 +383,20 @@ class RefinerFactory:
         obs["y_resid"] = y_calc - y_obs
         obs["phi_resid"] = phi_calc - phi_obs
         refman.update_residuals()
+
+        if (
+            params.refinement.reflections.outlier.algorithm == "mcd"
+            and params.refinement.reflections.outlier.mcd.positional_coordinates
+            in ("radial_transverse", "deltatt_transverse")
+        ):
+            compute_radial_and_transverse_residuals(
+                experiments,
+                obs,
+                two_theta=params.refinement.reflections.outlier.mcd.positional_coordinates
+                == "deltatt_transverse"
+                or params.refinement.reflections.outlier.mcd.positional_coordinates
+                == "delpsidstar",
+            )
 
         # determine whether to do basic centroid analysis to automatically
         # determine outlier rejection block

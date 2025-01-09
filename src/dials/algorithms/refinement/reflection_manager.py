@@ -209,6 +209,40 @@ class BlockCalculator:
 
 class ReflectionManagerFactory:
     @staticmethod
+    def get_col_names(params: libtbx.phil.scope_extract, do_stills: bool = False):
+        if params.outlier.algorithm in ("null", None):
+            return
+
+        if params.outlier.algorithm == "mcd":
+            if params.outlier.mcd.positional_coordinates in ("auto", libtbx.Auto):
+                params.outlier.mcd.positional_coordinates = "xy"
+            if params.outlier.mcd.rotational_coordinates in ("auto", libtbx.Auto):
+                if do_stills:
+                    params.outlier.mcd.rotational_coordinates = "null"
+                else:
+                    params.outlier.mcd.rotational_coordinates = "phi"
+
+            if params.outlier.mcd.positional_coordinates == "radial_transverse":
+                colnames = ["r_resid", "t_resid"]
+            elif params.outlier.mcd.positional_coordinates == "deltatt_transverse":
+                colnames = ["twotheta_resid", "t_resid"]
+            else:
+                colnames = ["x_resid", "y_resid"]
+
+            if params.outlier.mcd.rotational_coordinates == "phi":
+                colnames.append("phi_resid")
+            elif params.outlier.mcd.rotational_coordinates == "deltapsi":
+                colnames.append("delpsical.rad")
+            elif params.outlier.mcd.rotational_coordinates == "delpsidstar":
+                colnames.append("delpsidstar")
+        else:
+            if do_stills:
+                colnames = ["x_resid", "y_resid"]
+            else:
+                colnames = ["x_resid", "y_resid", "phi_resid"]
+        return colnames
+
+    @staticmethod
     def from_parameters_reflections_experiments(
         params, reflections, experiments, do_stills=False
     ):
@@ -264,7 +298,7 @@ class ReflectionManagerFactory:
         if params.outlier.algorithm in ("null", None):
             outlier_detector = None
         else:
-            colnames = ["x_resid", "y_resid"]
+            colnames = ReflectionManagerFactory.get_col_names(params, do_stills=True)
             params.outlier.block_width = None
             from dials.algorithms.refinement.outlier_detection import (
                 CentroidOutlierFactory,
@@ -333,7 +367,8 @@ class ReflectionManagerFactory:
         if params.outlier.algorithm in ("null", None):
             outlier_detector = None
         else:
-            colnames = ["x_resid", "y_resid", "phi_resid"]
+            colnames = ReflectionManagerFactory.get_col_names(params)
+
             from dials.algorithms.refinement.outlier_detection import (
                 CentroidOutlierFactory,
             )
@@ -390,7 +425,7 @@ class ReflectionManagerFactory:
         if params.outlier.algorithm in ("null", None):
             outlier_detector = None
         else:
-            colnames = ["x_resid", "y_resid"]
+            colnames = ReflectionManagerFactory.get_col_names(params, do_stills=True)
             params.outlier.block_width = None
             from dials.algorithms.refinement.outlier_detection import (
                 CentroidOutlierFactory,

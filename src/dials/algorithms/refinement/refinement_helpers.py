@@ -311,3 +311,57 @@ def set_obs_s1(reflections, experiments):
             s1 = s1 / s1.norms() * (1 / beam.get_wavelength())
             reflections["s1"].set_selected(isel, s1)
     return nrefs_wo_s1
+
+
+def compute_radial_and_transverse_residuals(experiments, reflections, two_theta=False):
+    """Compute radial and transverse residuals, relative to the beam center"""
+    beam_centre_lab = flex.vec3_double(len(reflections))
+    obs_lab_coords = flex.vec3_double(len(reflections))
+    calc_lab_coords = flex.vec3_double(len(reflections))
+    delta_lab_coords = flex.vec3_double(len(reflections))
+    delta_xy_panel = reflections["xyzcal.mm"] - reflections["xyzobs.mm.value"]
+    panel_ori = flex.vec3_double(len(reflections))
+
+    all_s0 = flex.vec3_double(len(reflections))
+    for expt_id, expt in enumerate(experiments):
+        all_s0.set_selected(reflections["id"] == expt_id, expt.beam.get_s0())
+
+    # faster to do this row by row than using selections for multi-panel, multi-experiment data
+    for i in range(len(reflections)):
+        expt_id = reflections["id"][i]
+        panel = experiments[expt_id].detector[reflections["panel"][i]]
+
+        # Compute the beam center in lab space (a vector pointing from the origin to where the beam would intersect
+        # the panel, if it did intersect the panel)
+        beam_centre_lab[i] = panel.get_beam_centre_lab(all_s0[i])
+
+        # Compute obs in lab space
+        obs_lab_coords[i] = panel.get_lab_coord(reflections["xyzobs.mm.value"][i][0:2])
+
+        # Compute deltaXY in lab space
+        delta_lab_coords[i] = panel.get_lab_coord(delta_xy_panel[i][0:2])
+        panel_ori[i] = panel.get_origin()
+
+        # Compute calc in lab space
+        calc_lab_coords[i] = panel.get_lab_coord(reflections["xyzcal.mm"][i][0:2])
+
+    # subtract off the panel origin to center the deltas relative to the lab origin
+    delta_lab_coords = delta_lab_coords - panel_ori
+
+    if two_theta:
+        tto = obs_lab_coords.angle(all_s0)
+        ttc = calc_lab_coords.angle(all_s0)
+
+        d = all_s0.norms() / 2 / flex.sin(ttc / 2)
+        reflections["delpsidstar"] = reflections["delpsical.rad"] * flex.sqrt(4.0 / d)
+
+    # The radial vector points from the center of the reflection to the beam center
+    radial_vectors = (obs_lab_coords - beam_centre_lab).each_normalize()
+    # The transverse vector is orthogonal to the radial vector and the beam vector
+    transverse_vectors = radial_vectors.cross(beam_centre_lab).each_normalize()
+    # Compute the raidal and transverse components of each deltaXY
+    reflections["t_resid"] = delta_lab_coords.dot(transverse_vectors)
+    if two_theta:
+        reflections["twotheta_resid"] = tto - ttc
+    else:
+        reflections["r_resid"] = delta_lab_coords.dot(radial_vectors)
