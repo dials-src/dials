@@ -293,6 +293,32 @@ class Importer:
             )
         except FileNotFoundError as e:
             logger.error(f"File {e.filename} not found")
+        except Exception as e:
+            logger.error(f"Error encountered reading images:\n{e}")
+            if len(args) > 1:
+                for arg in args:
+                    try:
+                        experiments = ExperimentListFactory.from_filenames(
+                            [arg],
+                            unhandled=[],
+                            compare_beam=compare_beam,
+                            compare_detector=compare_detector,
+                            compare_goniometer=compare_goniometer,
+                            scan_tolerance=scan_tolerance,
+                            format_kwargs=format_kwargs,
+                            load_models=load_models,
+                        )
+                    except Exception as e:
+                        self._handle_converter_error(arg, e, type="Image")
+                        unhandled.append(arg)
+                    else:
+                        self.experiments.append(
+                            FilenameDataWrapper(
+                                filename="<image files>", data=experiments
+                            )
+                        )
+            else:
+                unhandled.append(args[0])
         else:
             if experiments:
                 self.experiments.append(
