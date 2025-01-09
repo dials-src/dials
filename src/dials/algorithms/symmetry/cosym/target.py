@@ -9,7 +9,7 @@ import logging
 
 import numpy as np
 import pandas as pd
-from orderedset import OrderedSet
+from ordered_set import OrderedSet
 from scipy import sparse
 
 import cctbx.sgtbx.cosets

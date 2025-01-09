@@ -26,7 +26,7 @@ import math
 import sys
 import warnings
 
-from orderedset import OrderedSet
+from ordered_set import OrderedSet
 
 from dxtbx.model.experiment_list import Experiment, ExperimentList
 from libtbx.phil import parse

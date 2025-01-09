@@ -8,7 +8,7 @@ from __future__ import annotations
 import copy
 import logging
 
-from orderedset import OrderedSet
+from ordered_set import OrderedSet
 
 import iotbx.phil
 from dxtbx.util import ersatz_uuid4

@@ -7,7 +7,7 @@ import pickle
 import sys
 from collections import defaultdict, namedtuple
 
-from orderedset import OrderedSet
+from ordered_set import OrderedSet
 
 import dxtbx.model.compare as compare
 import libtbx.phil

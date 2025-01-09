@@ -12,7 +12,7 @@ import warnings
 from collections import defaultdict, namedtuple
 from glob import glob
 
-from orderedset import OrderedSet
+from ordered_set import OrderedSet
 
 import libtbx.phil
 from dxtbx.model import ExperimentList

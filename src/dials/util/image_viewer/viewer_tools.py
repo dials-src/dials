@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import wx
 import wx.lib.newevent
-from orderedset import OrderedSet
+from ordered_set import OrderedSet
 
 ZeroMQEvent, EVT_ZEROMQ_EVENT = wx.lib.newevent.NewEvent()
 

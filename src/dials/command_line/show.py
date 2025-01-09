@@ -425,7 +425,7 @@ def show_reflections(
 ):
     text = []
 
-    from orderedset import OrderedSet
+    from ordered_set import OrderedSet
 
     formats = {
         "miller_index": "%i, %i, %i",

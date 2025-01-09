@@ -9,7 +9,7 @@ import logging
 import math
 
 from jinja2 import ChoiceLoader, Environment, PackageLoader
-from orderedset import OrderedSet
+from ordered_set import OrderedSet
 
 from cctbx import uctbx
 from dxtbx import flumpy
