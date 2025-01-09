@@ -1,10 +1,16 @@
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL Clang OR CMAKE_CXX_COMPILER_ID STREQUAL AppleClang)
     set(CMAKE_CXX_FLAGS_COVERAGE            "${CMAKE_CXX_FLAGS_DEBUG} -fprofile-instr-generate -fcoverage-mapping")
+    set(GCC_DEBUG_FLAGS "-g -Wall")
+
+    set(CMAKE_CXX_FLAGS_COVERAGE "${GCC_DEBUG_FLAGS} -fprofile-arcs -ftest-coverage")
+    set(CMAKE_C_FLAGS_COVERAGE "${GCC_DEBUG_FLAGS} -fprofile-arcs -ftest-coverage")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_COVERAGE} ${CMAKE_C_FLAGS_COVERAGE}")
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
     set(CMAKE_CXX_FLAGS_COVERAGE            "${CMAKE_CXX_FLAGS_DEBUG} --coverage -fprofile-abs-path")
     set(CMAKE_EXE_LINKER_FLAGS_COVERAGE     "${CMAKE_EXE_LINKER_FLAGS_COVERAGE} --coverage")
     set(CMAKE_SHARED_LINKER_FLAGS_COVERAGE  "${CMAKE_SHARED_LINKER_FLAGS_COVERAGE} --coverage")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_COVERAGE}")
 else()
     # It's an error if we requested coverage, otherwise ignore
     string( TOUPPER "${CMAKE_BUILD_TYPE}" _build_type )

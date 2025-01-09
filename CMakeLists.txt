@@ -14,6 +14,8 @@ include(CheckCXXSymbolExists)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # Generate compile_commands.json
 set(CMAKE_CXX_STANDARD 14)
 
+message(STATUS "CMAKE CXX COMPILER ID - ${CMAKE_CXX_COMPILER_ID}")
+
 find_package(Python REQUIRED COMPONENTS Interpreter Development)
 find_package(CCTBX COMPONENTS cctbx scitbx ccp4io annlib REQUIRED)
 find_package(DXTBX REQUIRED)
