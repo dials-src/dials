@@ -1,0 +1,1 @@
+`dials.pixel_histogram`: tool to generate a histogram from the pixels found in spot finding, to simplify searches for overloaded reflections on pixel array detectors
