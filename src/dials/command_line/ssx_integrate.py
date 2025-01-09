@@ -165,8 +165,7 @@ loggers_to_disable_for_stills = loggers_to_disable + [
 ]
 
 
-def process_one_image(experiment, table, params, integrator_class):
-    collect_data = params.output.html or params.output.json
+def process_one_image(experiment, table, params, integrator_class, collect_data=True):
     integrator = integrator_class(params, collect_data)
     try:
         experiment, table, collector = integrator.run(experiment, table)
@@ -248,11 +247,15 @@ class IntegrationResult:
 
 
 def wrap_integrate_one(input_to_integrate: InputToIntegrate):
+    collect_data = (
+        input_to_integrate.params.output.html or input_to_integrate.params.output.json
+    )
     expt, refls, collector = process_one_image(
         input_to_integrate.experiment,
         input_to_integrate.table,
         input_to_integrate.params,
         input_to_integrate.integrator_class,
+        collect_data,
     )
 
     result = IntegrationResult(
