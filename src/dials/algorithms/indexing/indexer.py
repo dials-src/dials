@@ -22,6 +22,7 @@ from dials.algorithms.indexing.compare_orientation_matrices import (
 from dials.algorithms.indexing.max_cell import find_max_cell
 from dials.algorithms.indexing.symmetry import SymmetryHandler
 from dials.algorithms.refinement import DialsRefineConfigError, DialsRefineRuntimeError
+from dials.algorithms.spot_finding.per_image_analysis import ice_rings_selection
 from dials.array_family import flex
 from dials.util.multi_dataset_handling import generate_experiment_identifiers
 
@@ -915,20 +916,39 @@ class Indexer:
             logger.info(expt.crystal)
 
         indexed_flags = reflections.get_flags(reflections.flags.indexed)
+        ice_rings = ice_rings_selection(reflections)
+        if unindexed_reflections:
+            unindexed_rings = ice_rings_selection(unindexed_reflections)
+        else:
+            unindexed_rings = None
         imageset_id = reflections["imageset_id"]
-        rows = [["Imageset", "# indexed", "# unindexed", "% indexed"]]
+        rows = [
+            [
+                "Imageset",
+                "# indexed",
+                "# unindexed",
+                "# non-ice",
+                "% indexed",
+            ]
+        ]
         for i in range(flex.max(imageset_id) + 1):
-            imageset_indexed_flags = indexed_flags.select(imageset_id == i)
+            sel = imageset_id == i
+            imageset_indexed_flags = indexed_flags.select(sel)
+            ice = ice_rings.select(sel)
             indexed_count = imageset_indexed_flags.count(True)
             unindexed_count = imageset_indexed_flags.count(False)
+            unindexed_noice = (~imageset_indexed_flags & ~ice).count(True)
+
             if unindexed_reflections:
                 sel = unindexed_reflections["imageset_id"] == i
                 unindexed_count += sel.count(True)
+                unindexed_noice += unindexed_rings.select(sel).count(False)
             rows.append(
                 [
                     str(i),
                     str(indexed_count),
                     str(unindexed_count),
+                    str(unindexed_noice),
                     f"{indexed_count / (indexed_count + unindexed_count)*100:.1f}",
                 ]
             )

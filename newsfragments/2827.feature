@@ -1,0 +1,1 @@
+``dials.index``: as well as reporting # unindexed in the output, report # unindexed away from ice ring regions
