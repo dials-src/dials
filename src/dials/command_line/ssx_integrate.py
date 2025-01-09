@@ -492,10 +492,15 @@ def run(args: list[str] = None, phil=working_phil) -> None:
             int_expt = elist
         reflections_filename = f"integrated_{i+1}.refl"
         experiments_filename = f"integrated_{i+1}.expt"
-        logger.info(f"Saving {int_refl.size()} reflections to {reflections_filename}")
-        int_refl.as_file(reflections_filename)
-        logger.info(f"Saving the experiments to {experiments_filename}")
-        int_expt.as_file(experiments_filename)
+        if int_refl.size() > 0:
+            logger.info(
+                f"Saving {int_refl.size()} reflections to {reflections_filename}"
+            )
+            int_refl.as_file(reflections_filename)
+            logger.info(f"Saving the experiments to {experiments_filename}")
+            int_expt.as_file(experiments_filename)
+        else:
+            logger.info("No reflections integrated")
 
         integrated_crystal_symmetries.extend(
             [

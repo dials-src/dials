@@ -1,0 +1,1 @@
+``dials.ssx_integrate``: do not output a reflection file if no reflections were integrated.
