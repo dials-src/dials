@@ -22,6 +22,7 @@ from dials.command_line.symmetry import (
     change_of_basis_ops_to_minimum_cell,
     eliminate_sys_absent,
     median_unit_cell,
+    unit_cells_are_similar_to,
 )
 from dials.util import Sorry, log, show_mail_handle_errors
 from dials.util.exclude_images import get_selection_for_valid_image_ranges
@@ -230,6 +231,35 @@ class cosym(Subject):
         self._apply_reindexing_operators(
             reindexing_ops, subgroup=self.cosym_analysis.best_subgroup
         )
+        self._check_unit_cell_consistency()
+
+    def _check_unit_cell_consistency(self):
+        median_cell = median_unit_cell(self._experiments)
+        unit_cells_are_similar = unit_cells_are_similar_to(
+            self._experiments,
+            median_cell,
+            self.params.relative_length_tolerance,
+            self.params.absolute_angle_tolerance,
+        )
+        if not unit_cells_are_similar:
+            median_str = ", ".join(f"{i:.3f}" for i in median_cell.parameters())
+            logger.info(f"Median cell: {median_str}")
+            for i, xtal in enumerate(self._experiments.crystals()):
+                if not xtal.get_unit_cell().is_similar_to(
+                    median_cell,
+                    relative_length_tolerance=self.params.relative_length_tolerance,
+                    absolute_angle_tolerance=self.params.absolute_angle_tolerance,
+                ):
+                    cell = ", ".join(
+                        f"{i:.3f}" for i in xtal.get_unit_cell().parameters()
+                    )
+                    logger.info(f"Incompatible cell: {cell} (dataset {i})")
+                else:
+                    cell = ", ".join(
+                        f"{i:.3f}" for i in xtal.get_unit_cell().parameters()
+                    )
+                    logger.info(f"Compatible cell: {cell} (dataset {i})")
+            raise RuntimeError("Incompatible unit cells after reindexing")
 
     def export(self):
         """Output the datafiles for cosym.

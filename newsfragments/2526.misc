@@ -1,0 +1,1 @@
+``dials.cosym``: raise RuntimeError if inconsistent output cells after reindexing
