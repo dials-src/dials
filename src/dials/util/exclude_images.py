@@ -131,18 +131,34 @@ def _parse_exclude_images_commands(commands, experiments, reflections):
                         "Exclude images must be input in the form experimentnumber:start:stop, or start:stop for a single experiment"
                         + " Multiple ranges can be specified by comma or space separated values e.g 0:100:150,1:120:200"
                     )
-                dataset_id = int(vals[0])
-                if reflections:
-                    for table in reflections:
-                        if dataset_id in table.experiment_identifiers():
-                            expid = table.experiment_identifiers()[dataset_id]
+                if vals[0] == "*":
+                    for dataset_id in range(len(experiments)):
+                        if reflections:
+                            for table in reflections:
+                                if dataset_id in table.experiment_identifiers():
+                                    expid = table.experiment_identifiers()[dataset_id]
+                                    ranges_to_remove.append(
+                                        (expid, (int(vals[1]), int(vals[2])))
+                                    )
+                                    break
+                        else:
+                            expid = experiments[dataset_id].identifier
                             ranges_to_remove.append(
                                 (expid, (int(vals[1]), int(vals[2])))
                             )
-                            break
                 else:
-                    expid = experiments[dataset_id].identifier
-                    ranges_to_remove.append((expid, (int(vals[1]), int(vals[2]))))
+                    dataset_id = int(vals[0])
+                    if reflections:
+                        for table in reflections:
+                            if dataset_id in table.experiment_identifiers():
+                                expid = table.experiment_identifiers()[dataset_id]
+                                ranges_to_remove.append(
+                                    (expid, (int(vals[1]), int(vals[2])))
+                                )
+                                break
+                    else:
+                        expid = experiments[dataset_id].identifier
+                        ranges_to_remove.append((expid, (int(vals[1]), int(vals[2]))))
     return ranges_to_remove
 
 

@@ -1,0 +1,1 @@
+``dials.scale``: in exclude_images allow wildcard for experiment i.e. exclude_images=*:21:100 would exclude 80 images from every experiment
