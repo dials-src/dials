@@ -448,8 +448,15 @@ class Script:
         if rank == 0:
             # Parse the command line
             params, options, all_paths = self.parser.parse_args(
-                args, show_diff_phil=False, return_unhandled=True, quick_parse=True
+                args, show_diff_phil=True, return_unhandled=True, quick_parse=True
             )
+            diff_phil_file = os.path.join(params.output.output_dir, "diff.phil")
+            os.makedirs(params.output.output_dir, exist_ok=True)
+            with open(diff_phil_file, "w") as o:
+                o.write("command line:\n%s\n" % (" ".join(sys.argv)))
+                o.write("workding directory: \n%s\n" % os.getcwd())
+                o.write("diff phil:\n")
+                o.write(self.parser.diff_phil.as_str())
 
             if params.input.glob:
                 all_paths.extend(params.input.glob)
