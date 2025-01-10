@@ -1,0 +1,5 @@
+# Extra dependendencies used in CI
+test:
+  - pytest-md
+  - pytest-cov
+  - pytest-timeout

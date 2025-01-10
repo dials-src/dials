@@ -38,6 +38,11 @@ try:
 except ImportError:
     pass
 
+try:
+    from typing import Literal  # noqa: F401
+except ImportError:
+    pass
+
 # Clean environment for subprocesses
 clean_env = {
     key: value
@@ -48,8 +53,6 @@ clean_env = {
 devnull = open(os.devnull, "wb")  # to redirect unwanted subprocess output
 allowed_ssh_connections = {}
 concurrent_git_connection_limit = threading.Semaphore(5)
-
-_prebuilt_cctbx_base = "2024"
 
 
 def make_executable(filepath):
@@ -89,7 +92,73 @@ working network connection for downloading conda packages.
         )
 
 
-def install_micromamba(python, cmake):
+def get_requirements(conda_platform, conda_arch, python_version, is_cmake, extra_deps):
+    # type: (str, Literal["linux", "macos", "windows"], str, bool, list[str] | None) -> str
+
+    """
+    Find or create a file of platform-specific dependencies
+    """
+    # Searching for definitions first looks for platform/version locked:
+    # modules/dials/.conda-envs/{conda_arch}-py{python_version}.txt: Full release locked files
+    #
+    # Otherwise, look for and merge the new requirements format. It is
+    # an error if these are not present (e.g. before the update step):
+    #
+    # - modules/dials/dependencies.yaml
+    # - modules/dxtbx/dependencies.yaml
+    # - modules/xia2/dependencies.yaml
+    #
+    # And, if not using a prebuild cctbx:
+    # - modules/dials/.conda_envs/cctbx-dependencies.yaml
+
+    # Identify packages required for environment
+    env_dir = os.path.join("modules", "dials", ".conda-envs")
+    # First, check to see if we have an architecture-and-python-specific environment file
+    filename = os.path.join(env_dir, "{0}_py{1}.txt".format(conda_arch, python_version))
+    if os.path.isfile(filename):
+        return filename
+
+    expected_dependency_lists = [
+        "modules/dials/dependencies.yaml",
+        "modules/dxtbx/dependencies.yaml",
+        # "modules/xia2/dependencies.yaml",
+    ]
+    if not is_cmake:
+        expected_dependency_lists.append(
+            "modules/dials/.conda-envs/cctbx-dependencies.yaml"
+        )
+    expected_dependency_lists.extend(extra_deps or [])
+
+    for reqfile in expected_dependency_lists:
+        if not os.path.isfile(reqfile):
+            # We need this...
+            sys.exit(
+                "Error: Could not find dependency list {}. Have you run 'bootstrap update'?".format(
+                    reqfile
+                )
+            )
+
+    # Run the dependency merger
+    prebuilt = ["--prebuilt-cctbx"] if is_cmake else []
+    platform_selectors = {"linux": "linux", "macos": "osx", "windows": "win"}
+    results = subprocess.check_output(
+        [
+            sys.executable,
+            "modules/dials/util/parse_dependency_selectors.py",
+            "-p",
+            platform_selectors[conda_platform],
+        ]
+        + prebuilt
+        + expected_dependency_lists
+    )
+    filename = "modules/dials/.conda-envs/requirements.txt"
+    with open(filename, "wb") as f:
+        f.write(results)
+    return filename
+
+
+def install_micromamba(python, cmake, extra_deps):
+    # type: (str, bool, list[str] | None) -> None
     """Download and install Micromamba"""
     if sys.platform.startswith("linux"):
         conda_platform = "linux"
@@ -110,7 +179,7 @@ def install_micromamba(python, cmake):
         raise NotImplementedError(
             "Unsupported platform %s / %s" % (os.name, sys.platform)
         )
-    url = "https://micromamba.snakepit.net/api/micromamba/{0}/latest".format(conda_arch)
+    url = "https://micro.mamba.pm/api/micromamba/{0}/latest".format(conda_arch)
     mamba_prefix = os.path.realpath("micromamba")
     clean_env["MAMBA_ROOT_PREFIX"] = mamba_prefix
     mamba = os.path.join(mamba_prefix, member.split("/")[-1])
@@ -130,21 +199,14 @@ def install_micromamba(python, cmake):
         conda_info = conda_info.decode("latin-1")
     print("Using Micromamba version", conda_info.strip())
 
-    # Identify packages required for environment
-    env_dir = os.path.join("modules", "dials", ".conda-envs")
-    # First, check to see if we have an architecture-and-python-specific environment file
-    filename = os.path.join(env_dir, "{0}_py{1}.txt".format(conda_arch, python))
-    if not os.path.isfile(filename):
-        # Otherwise, check if we have an architecture-specific environment file
-        filename = os.path.join(env_dir, "{0}.txt".format(conda_arch))
-    if not os.path.isfile(filename):
-        # Otherwise, use the platform-specific fallback
-        filename = os.path.join(env_dir, conda_platform + ".txt")
-    if not os.path.isfile(filename):
-        raise RuntimeError(
-            "The environment file {filename} is not available".format(filename=filename)
-        )
-
+    # Find or generate the requirements list
+    filename = get_requirements(
+        conda_platform=conda_platform,
+        conda_arch=conda_arch,
+        python_version=python,
+        is_cmake=cmake,
+        extra_deps=extra_deps,
+    )
     # install a new environment or update an existing one
     prefix = os.path.realpath("conda_base")
     if os.path.exists(prefix):
@@ -174,24 +236,26 @@ def install_micromamba(python, cmake):
         python_requirement,
     ]
     extra_deps = []
+
     if cmake:
-        extra_deps = [
-            "cctbx-base=" + _prebuilt_cctbx_base,
-            "pycbf",
-            "cmake",
-            "pre-commit",
-        ]
-        if _prebuilt_cctbx_base == "2024.7":
-            # Known minor incompatibility causes this to otherwise be removed
-            extra_deps.append("libboost-python-devel")
-        # If we're running from an explicit requirements file, then we
-        # need to install extra dependencies in a separate stage
+        # This should no longer be necessary... except for now we also want to
+        # continue to support the DIALS-release-style explicit lock file
+        # with CMake options. So look for an explicit lockfile, then if
+        # present just have a hardcoded list of extra packages.
+        #
+        # This is a bad solution but will keep us going until we move
+        # to a better way of doing releases.
         with open(filename) as dep_file:
             is_explicit_reqs = "@EXPLICIT" in dep_file.read()
 
-        if not is_explicit_reqs:
-            command_list.extend(extra_deps)
-            extra_deps = []
+        if is_explicit_reqs:
+            extra_deps = [
+                "cctbx-base",
+                "pycbf",
+                "cmake",
+                "pre-commit",
+                "libboost-python-devel",  # Have seen this removed by explicit update
+            ]
 
     print(
         "{text} dials environment from {filename} with Python {python}".format(
@@ -1302,6 +1366,11 @@ be passed separately with quotes to avoid confusion (e.g
         dest="removed_cmake",
         help=argparse.SUPPRESS,
     )
+    parser.add_argument(
+        "--extra-dependencies",
+        action="append",
+        help=argparse.SUPPRESS,
+    )
 
     options = parser.parse_args()
     if options.removed_cmake:
@@ -1319,6 +1388,7 @@ be passed separately with quotes to avoid confusion (e.g
         install_micromamba(
             options.python,
             cmake=options.cmake,
+            extra_deps=options.extra_dependencies,
         )
         if options.clean:
             shutil.rmtree(os.path.realpath("micromamba"))

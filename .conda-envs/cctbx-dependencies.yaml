@@ -1,0 +1,20 @@
+# Additional CCTBX dependencies
+#
+# This file contains extra packages that are specifically required when
+# building CCTBX from scratch e.g. not using cctbx from conda-forge.
+# Dependencies that both DIALS and CCTBX use are not listed here.
+
+build:
+  - bzip2
+  - c-compiler
+  - eigen
+  - scons
+run:
+  - future
+  - iota
+  - pyrtf
+  - six
+  - sqlite
+  - urllib3
+  - xz
+  - zlib

@@ -1,9 +1,9 @@
-This directory contains 3 platform-specific environment files:
+This directory used to contain the per-platform requirements files, listing
+the dependencies for DIALS.
 
-* linux.txt
-* macos.txt
-* windows.txt
+That information is now contained in the root `dependencies.yaml` file.
 
-These will be used when you use the DIALS bootstrap. Please see
-https://dials.github.io/documentation/installation_developer.html
-for instructions.
+This folder is still used for:
+
+- Listing cctbx dependencies that are not dependencies of DIALS.
+- Releases store the pinning lockfiles here.
