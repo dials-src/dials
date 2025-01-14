@@ -1,0 +1,1 @@
+``dials.ssx_index``: Fix crash when processing stills with no scan objects.

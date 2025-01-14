@@ -484,7 +484,7 @@ def index(
             )
             params.output.nuggets = None
 
-    if any(not s.is_still() for s in experiments.scans()):
+    if any(s and not s.is_still() for s in experiments.scans()):
         raise DialsIndexError(
             "Not all experiments are stills. For rotation data, use the dials.index program."
         )
