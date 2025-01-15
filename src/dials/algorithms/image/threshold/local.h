@@ -901,7 +901,13 @@ namespace dials { namespace algorithms {
       final_mask_ = af::versa<bool, af::c_grid<2> >(image.accessor(), false);
       global_mask_ = af::versa<bool, af::c_grid<2> >(image.accessor(), false);
       for (std::size_t i = 0; i < image.size(); ++i) {
-        if (temp[i]) {
+        if (!temp[i]) {
+          /*
+           * Masked pixels are set as non-background in order to
+           * prevent them from affecting the erosion calculation.
+           */
+          cv_mask_[i] = true;
+        } else {
           double bnd_b = gain[i] + nsig_b * gain[i] * std::sqrt(2.0 / (count[i] - 1));
           cv_mask_[i] = cv_[i] > bnd_b;
           global_mask_[i] = image[i] > threshold;
@@ -1094,7 +1100,13 @@ namespace dials { namespace algorithms {
 
           // Compute the thresholds
           dst[k] = false;
-          if (mask[k] && m >= min_count_ && x >= 0) {
+          if (!mask[k]) {
+            /*
+             * Masked pixels are set as non-background in order to
+             * prevent them from affecting the erosion calculation.
+             */
+            dst[k] = true;
+          } else if (m >= min_count_ && x >= 0) {
             double a = m * y - x * x - x * (m - 1);
             double c = x * nsig_b_ * std::sqrt(2 * (m - 1));
             dst[k] = (a > c);
@@ -1165,7 +1177,13 @@ namespace dials { namespace algorithms {
 
           // Compute the thresholds
           dst[k] = false;
-          if (mask[k] && m >= min_count_ && x >= 0) {
+          if (!mask[k]) {
+            /*
+             * Masked pixels are set as non-background in order to
+             * prevent them from affecting the erosion calculation.
+             */
+            dst[k] = true;
+          } else if (m >= min_count_ && x >= 0) {
             double a = m * y - x * x;
             double c = gain[k] * x * (m - 1 + nsig_b_ * std::sqrt(2 * (m - 1)));
             dst[k] = (a > c);

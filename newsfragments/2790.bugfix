@@ -1,0 +1,3 @@
+Set masked pixels to 'true' in the dispersion threshold mask so that
+they do not affect erosion and erroneously erode from masked regions as
+if they were background.
